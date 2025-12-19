@@ -24,6 +24,7 @@ async function run() {
 
         const db = client.db("fudexDB");
         const usersCollection = db.collection("usersCollection");
+        const mealsCollection = db.collection("mealsCollection")
         const requestsCollection = db.collection("roleRequests");
 
         app.post("/users", async (req, res) => {
@@ -72,6 +73,13 @@ async function run() {
                 res.status(500).json({ message: "Internal Server Error" });
             }
         });
+
+        app.post('/create-meal', async(req, res)=>{
+            mealData = req.body;
+            const result = await mealsCollection.insertOne(mealData);
+            res.send(result);
+
+        })
 
         app.get('/manage-requests', async (req, res) => {
 

@@ -2,6 +2,7 @@ const express = require('express')
 const app = express()
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+
 const port = 3000
 
 app.use(cors())
@@ -47,10 +48,10 @@ async function run() {
                 const db = client.db("fudexDB");
                 const requestsCollection = db.collection("roleRequests");
 
-                
+
                 const existingPending = await requestsCollection.findOne({
                     userId: userId,
-                    requestedRole: requestedRole, 
+                    requestedRole: requestedRole,
                     status: "pending"
                 });
 
@@ -74,7 +75,7 @@ async function run() {
             }
         });
 
-        app.post('/create-meal', async(req, res)=>{
+        app.post('/create-meal', async (req, res) => {
             mealData = req.body;
             const result = await mealsCollection.insertOne(mealData);
             res.send(result);
@@ -92,42 +93,66 @@ async function run() {
             res.send(result)
         });
 
-        app.get('/my-meals', async(req, res)=>{
+        app.get('/my-meals', async (req, res) => {
             const email = req.query.email
 
-            const result = await mealsCollection.find({userEmail : email}).toArray();
+            const result = await mealsCollection.find({ userEmail: email }).toArray();
+            res.send(result)
+        })
+        app.get('/all-meals', async (req, res) => {
+
+            const result = await mealsCollection.find().toArray();
             res.send(result)
         })
 
         
 
-       
+        app.get('/all-meals/:id', async (req, res) => {
+            try {
+                const id = req.params.id; 
+                const query = { _id: new ObjectId(id) }; 
+
+                const result = await mealsCollection.findOne(query); 
+
+                if (result) {
+                    res.send(result);
+                } else {
+                    res.status(404).send({ message: "Meal not found" });
+                }
+            } catch (error) {
+                res.status(500).send({ message: "Invalid ID format or Server Error" });
+            }
+        });
+
+
+
+
         app.get('/users/role/:email', async (req, res) => {
             const email = req.params.email;
             const user = await usersCollection.findOne({ email: email });
 
             if (user) {
-                res.send({ role: user.role }); 
+                res.send({ role: user.role });
             } else {
                 res.status(404).send({ message: "User not found" });
             }
         });
 
         app.patch('/users/fraud/:email', async (req, res) => {
-           
+
             const email = req.params.email;
 
-          
+
             const filter = { email: email };
 
-           
+
             const updateDoc = {
                 $set: {
                     status: 'fraud'
                 },
             };
 
-         
+
             const result = await usersCollection.updateOne(filter, updateDoc);
 
             res.send(result);
@@ -155,7 +180,7 @@ async function run() {
 
 
                 const generateRandomChefId = () => {
-                    return 'CHEF-' + Math.floor(1000 + Math.random() * 9000); 
+                    return 'CHEF-' + Math.floor(1000 + Math.random() * 9000);
                 };
 
                 const userUpdateResult = await usersCollection.updateOne(
@@ -163,7 +188,7 @@ async function run() {
                     {
                         $set: {
                             role: request.requestedRole,
-                            chefId: generateRandomChefId() 
+                            chefId: generateRandomChefId()
                         }
                     }
                 );
@@ -174,7 +199,7 @@ async function run() {
                     return res.status(404).send({ message: "User not found" });
                 }
 
-               
+
                 await requestsCollection.updateOne(
                     { email },
                     { $set: { status: "approved" } }

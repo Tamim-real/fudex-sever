@@ -92,6 +92,15 @@ async function run() {
             res.send(result)
         });
 
+        app.get('/my-meals', async(req, res)=>{
+            const email = req.query.email
+
+            const result = await mealsCollection.find({userEmail : email}).toArray();
+            res.send(result)
+        })
+
+        
+
        
         app.get('/users/role/:email', async (req, res) => {
             const email = req.params.email;

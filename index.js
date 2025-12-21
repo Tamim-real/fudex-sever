@@ -29,6 +29,8 @@ async function run() {
         const usersCollection = db.collection("usersCollection");
         const mealsCollection = db.collection("mealsCollection")
         const requestsCollection = db.collection("roleRequests");
+        const orderCollection = db.collection("orderCollections");
+
 
         app.post("/users", async (req, res) => {
             const user = req.body;
@@ -222,6 +224,7 @@ async function run() {
             try {
                 const paymentInfo = req.body;
 
+                
                 const session = await stripe.checkout.sessions.create({
                     line_items: [
                         {
@@ -230,6 +233,7 @@ async function run() {
                                 unit_amount: Math.round(paymentInfo.cost * 100),
                                 product_data: {
                                     name: paymentInfo.foodName,
+                                    images: [paymentInfo.foodImage],
                                 },
                             },
                             quantity: 1,
@@ -239,17 +243,50 @@ async function run() {
                     mode: 'payment',
                     metadata: {
                         foodId: paymentInfo.foodId,
+                        chefId: paymentInfo.chefId,
                     },
-                    success_url: `${process.env.SITE_DOMAIN}/dashboard/payment-success`,
+                    success_url: `${process.env.SITE_DOMAIN}/payment-success`,
                     cancel_url: `${process.env.SITE_DOMAIN}/dashboard/payment-cancelled`,
                 });
 
+                
+                const orderData = {
+                    foodId: paymentInfo.foodId,
+                    foodName: paymentInfo.foodName,
+                    foodImage: paymentInfo.foodImage,
+                    price: paymentInfo.cost,
+
+                    chefName: paymentInfo.chefName,
+                    chefId: paymentInfo.chefId,
+
+                    customerEmail: paymentInfo.customer_email,
+                    deliveryTime: paymentInfo.deliveryTime,
+
+                    stripeSessionId: session.id,
+                    paymentStatus: "paid",   // will update after webhook
+                    orderStatus: "placed",
+
+                    createdAt: new Date(),
+                };
+
+                await orderCollection.insertOne(orderData);
+
+                
                 res.send({ url: session.url });
+
             } catch (error) {
-                console.error(error);
+                console.error("Stripe checkout error:", error);
                 res.status(500).send({ message: 'Payment session failed' });
             }
         });
+
+        //order related APIs
+
+        app.get('/customer-orders', async(req, res)=>{
+            const email = req.query.email;
+            const result = await orderCollection.find({ customerEmail: email }).toArray();
+            res.send(result)
+        })
 
 
 

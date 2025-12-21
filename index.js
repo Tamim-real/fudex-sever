@@ -30,6 +30,7 @@ async function run() {
         const mealsCollection = db.collection("mealsCollection")
         const requestsCollection = db.collection("roleRequests");
         const orderCollection = db.collection("orderCollections");
+        const reviewCollection = db.collection("reviewCollections")
 
 
         app.post("/users", async (req, res) => {
@@ -224,7 +225,7 @@ async function run() {
             try {
                 const paymentInfo = req.body;
 
-                
+
                 const session = await stripe.checkout.sessions.create({
                     line_items: [
                         {
@@ -249,7 +250,7 @@ async function run() {
                     cancel_url: `${process.env.SITE_DOMAIN}/dashboard/payment-cancelled`,
                 });
 
-                
+
                 const orderData = {
                     foodId: paymentInfo.foodId,
                     foodName: paymentInfo.foodName,
@@ -258,12 +259,13 @@ async function run() {
 
                     chefName: paymentInfo.chefName,
                     chefId: paymentInfo.chefId,
+                    chefEmail: paymentInfo.chefEmail,
 
                     customerEmail: paymentInfo.customer_email,
                     deliveryTime: paymentInfo.deliveryTime,
 
                     stripeSessionId: session.id,
-                    paymentStatus: "paid",   // will update after webhook
+                    paymentStatus: "paid",
                     orderStatus: "placed",
 
                     createdAt: new Date(),
@@ -271,7 +273,7 @@ async function run() {
 
                 await orderCollection.insertOne(orderData);
 
-                
+
                 res.send({ url: session.url });
 
             } catch (error) {
@@ -282,13 +284,56 @@ async function run() {
 
         //order related APIs
 
-        app.get('/customer-orders', async(req, res)=>{
+        app.get('/customer-orders', async (req, res) => {
             const email = req.query.email;
             const result = await orderCollection.find({ customerEmail: email }).toArray();
             res.send(result)
         })
 
+        //order chef
 
+        app.get('/chef-orders', async (req, res) => {
+            const email = req.query.email;
+            const result = await orderCollection.find({ chefEmail: email }).toArray();
+            res.send(result)
+        })
+
+        //add review 
+
+        app.post('/add-review', async (req, res) => {
+            const reviewInfo = req.body
+
+            const result = await reviewCollection.insertOne(reviewInfo);
+            res.send(result)
+        })
+
+        // GET reviews for a specific meal
+        app.get('/reviews/:id', async (req, res) => {
+            try {
+                const id = req.params.id;
+
+
+                const query = { mealId: id };
+
+
+                const result = await reviewCollection
+                    .find(query)
+                    .sort({ _id: -1 })
+                    .toArray();
+
+                res.send(result);
+            } catch (error) {
+                console.error("Error fetching reviews:", error);
+                res.status(500).send({ message: "Error fetching reviews" });
+            }
+        });
+
+        app.get('/my-review/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { reviewerEmail: email };
+            const result = await reviewCollection.find(query).toArray();
+            res.send(result);
+        });
 
         app.get('/', (req, res) => {
             res.send('Hello w')

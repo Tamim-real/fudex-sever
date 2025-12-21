@@ -1,7 +1,9 @@
 const express = require('express')
+require('dotenv').config();
 const app = express()
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const stripe = require('stripe')(process.env.STRIPE);
 
 const port = 3000
 
@@ -105,14 +107,14 @@ async function run() {
             res.send(result)
         })
 
-        
+
 
         app.get('/all-meals/:id', async (req, res) => {
             try {
-                const id = req.params.id; 
-                const query = { _id: new ObjectId(id) }; 
+                const id = req.params.id;
+                const query = { _id: new ObjectId(id) };
 
-                const result = await mealsCollection.findOne(query); 
+                const result = await mealsCollection.findOne(query);
 
                 if (result) {
                     res.send(result);
@@ -214,6 +216,40 @@ async function run() {
             }
         });
 
+        //payment related APIs
+
+        app.post('/create-checkout-session', async (req, res) => {
+            try {
+                const paymentInfo = req.body;
+
+                const session = await stripe.checkout.sessions.create({
+                    line_items: [
+                        {
+                            price_data: {
+                                currency: 'usd',
+                                unit_amount: Math.round(paymentInfo.cost * 100),
+                                product_data: {
+                                    name: paymentInfo.foodName,
+                                },
+                            },
+                            quantity: 1,
+                        },
+                    ],
+                    customer_email: paymentInfo.customer_email,
+                    mode: 'payment',
+                    metadata: {
+                        foodId: paymentInfo.foodId,
+                    },
+                    success_url: `${process.env.SITE_DOMAIN}/dashboard/payment-success`,
+                    cancel_url: `${process.env.SITE_DOMAIN}/dashboard/payment-cancelled`,
+                });
+
+                res.send({ url: session.url });
+            } catch (error) {
+                console.error(error);
+                res.status(500).send({ message: 'Payment session failed' });
+            }
+        });
 
 
 
@@ -227,6 +263,7 @@ async function run() {
 
 
         // Send a ping to confirm a successful connection
+
         // await client.db("admin").command({ ping: 1 });
         // console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {

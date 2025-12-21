@@ -31,6 +31,7 @@ async function run() {
         const requestsCollection = db.collection("roleRequests");
         const orderCollection = db.collection("orderCollections");
         const reviewCollection = db.collection("reviewCollections")
+        const favCollection = db.collection("favCollections");
 
 
         app.post("/users", async (req, res) => {
@@ -251,6 +252,11 @@ async function run() {
                 });
 
 
+
+
+
+                res.send({ url: session.url });
+
                 const orderData = {
                     foodId: paymentInfo.foodId,
                     foodName: paymentInfo.foodName,
@@ -272,9 +278,6 @@ async function run() {
                 };
 
                 await orderCollection.insertOne(orderData);
-
-
-                res.send({ url: session.url });
 
             } catch (error) {
                 console.error("Stripe checkout error:", error);
@@ -334,6 +337,22 @@ async function run() {
             const result = await reviewCollection.find(query).toArray();
             res.send(result);
         });
+
+        //favorites api
+
+        app.post('/favorites', async(req, res)=>{
+            const favData = req.body;
+
+            const result = await favCollection.insertOne(favData);
+            res.send(result)
+        })
+
+        app.get('/favorites', async(req, res)=>{
+            const email = req.query.email;
+
+            const result = await favCollection.find({userEmail : email}).toArray();
+            res.send(result)
+        })
 
         app.get('/', (req, res) => {
             res.send('Hello w')

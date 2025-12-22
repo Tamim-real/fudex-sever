@@ -331,36 +331,87 @@ async function run() {
             }
         });
 
+        app.get('/reviews', async (req, res) => {
+            const result = await reviewCollection.find().toArray();
+            res.send(result)
+        })
+
         app.get('/my-review/:email', async (req, res) => {
             const email = req.params.email;
             const query = { reviewerEmail: email };
             const result = await reviewCollection.find(query).toArray();
             res.send(result);
         });
+        const { ObjectId } = require("mongodb");
+
+        app.delete('/reviews/:id', async (req, res) => {
+            try {
+                const id = req.params.id;
+
+                const query = { _id: new ObjectId(id) };
+
+                const result = await reviewCollection.deleteOne(query);
+
+                if (result.deletedCount === 0) {
+                    return res.status(404).send({ message: "Review not found" });
+                }
+
+                res.send({
+                    success: true,
+                    message: "Review deleted successfully",
+                    deletedCount: result.deletedCount,
+                });
+            } catch (error) {
+                console.error("Error deleting review:", error);
+                res.status(500).send({ message: "Failed to delete review" });
+            }
+        });
+        app.patch('/reviews/:id', async (req, res) => {
+            try {
+                const id = req.params.id;
+                const updatedData = req.body; 
+
+                const query = { _id: new ObjectId(id) };
+
+               
+                const updateDoc = {
+                    $set: {
+                        rating: updatedData.rating,
+                        comment: updatedData.comment,
+                    },
+                };
+
+                const result = await reviewCollection.updateOne(query, updateDoc);
+                res.send(result);
+            } catch (error) {
+                console.error("Error updating review:", error);
+                res.status(500).send({ message: "Failed to UPDATE review" });
+            }
+        });
 
         //favorites api
 
-        app.post('/favorites', async(req, res)=>{
+        app.post('/favorites', async (req, res) => {
             const favData = req.body;
 
             const result = await favCollection.insertOne(favData);
             res.send(result)
         })
 
-        app.get('/favorites', async(req, res)=>{
+        app.get('/favorites', async (req, res) => {
             const email = req.query.email;
 
-            const result = await favCollection.find({userEmail : email}).toArray();
+            const result = await favCollection.find({ userEmail: email }).toArray();
             res.send(result)
         })
 
-        app.delete('/favorites/:id', async(req, res)=>{
+        app.delete('/favorites/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
 
             const result = await favCollection.deleteOne(query);
             res.send(result)
-            
+
         })
 
         app.get('/', (req, res) => {

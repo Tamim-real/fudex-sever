@@ -173,7 +173,6 @@ async function run() {
                     return res.status(400).send({ message: "Email is required" });
                 }
 
-
                 const request = await requestsCollection.findOne({ email });
 
                 if (!request) {
@@ -184,28 +183,26 @@ async function run() {
                     return res.status(400).send({ message: "Request already processed" });
                 }
 
-
-                const generateRandomChefId = () => {
-                    return 'CHEF-' + Math.floor(1000 + Math.random() * 9000);
+               
+                const updateData = {
+                    role: request.requestedRole 
                 };
+
+                
+                if (request.requestedRole === 'chef') {
+                    updateData.chefId = 'CHEF-' + Math.floor(1000 + Math.random() * 9000);
+                }
 
                 const userUpdateResult = await usersCollection.updateOne(
                     { email },
-                    {
-                        $set: {
-                            role: request.requestedRole,
-                            chefId: generateRandomChefId()
-                        }
-                    }
+                    { $set: updateData }
                 );
-
-
 
                 if (userUpdateResult.matchedCount === 0) {
                     return res.status(404).send({ message: "User not found" });
                 }
 
-
+                
                 await requestsCollection.updateOne(
                     { email },
                     { $set: { status: "approved" } }
@@ -213,13 +210,14 @@ async function run() {
 
                 res.send({
                     success: true,
-                    message: "Role updated successfully",
+                    message: `User promoted to ${request.requestedRole} successfully`,
                 });
+
             } catch (error) {
+                console.error(error);
                 res.status(500).send({ message: "Server error" });
             }
         });
-
         //payment related APIs
 
         app.post('/create-checkout-session', async (req, res) => {

@@ -272,7 +272,7 @@ async function run() {
 
                     stripeSessionId: session.id,
                     paymentStatus: "paid",
-                    orderStatus: "placed",
+                    orderStatus: "pending",
 
                     createdAt: new Date(),
                 };
@@ -300,7 +300,21 @@ async function run() {
             const result = await orderCollection.find({ chefEmail: email }).toArray();
             res.send(result)
         })
+        app.patch('/chef-orders/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const orderStatus = req.body;
 
+
+            const updateOrderStatus = {
+                $set: {
+                    orderStatus: orderStatus.status,
+
+                },
+            };
+            const result = await orderCollection.updateOne(query, updateOrderStatus);
+            res.send(result);
+        })
         //add review 
 
         app.post('/add-review', async (req, res) => {
@@ -369,11 +383,11 @@ async function run() {
         app.patch('/reviews/:id', async (req, res) => {
             try {
                 const id = req.params.id;
-                const updatedData = req.body; 
+                const updatedData = req.body;
 
                 const query = { _id: new ObjectId(id) };
 
-               
+
                 const updateDoc = {
                     $set: {
                         rating: updatedData.rating,

@@ -16,15 +16,19 @@ const favoriteRoutes = require('./src/routes/favoriteRoutes');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Middleware
-app.use(cors());
+
+app.use(cors({
+    origin: ['https://fudex.netlify.app', 'http://localhost:5173'], 
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'PUT'],
+    credentials: true
+}));
 app.use(express.json());
 
 async function run() {
     try {
         const db = await connectDB();
 
-       
+
         const usersCollection = db.collection("usersCollection");
         const mealsCollection = db.collection("mealsCollection");
         const requestsCollection = db.collection("roleRequests");
@@ -32,14 +36,14 @@ async function run() {
         const reviewCollection = db.collection("reviewCollections");
         const favCollection = db.collection("favCollections");
 
-        
+
         app.post('/jwt', async (req, res) => {
             const user = req.body;
             const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: '1h' });
             res.send({ token });
         });
 
-       
+
         app.use('/', userRoutes(usersCollection));
         app.use('/', mealRoutes(mealsCollection));
         app.use('/api', roleRoutes(requestsCollection, usersCollection));

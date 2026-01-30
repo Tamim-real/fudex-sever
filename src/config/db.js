@@ -1,4 +1,6 @@
 const { MongoClient, ServerApiVersion } = require("mongodb");
+require('dotenv').config();
+
 
 const uri = process.env.MONGO_URI;
 
@@ -11,8 +13,17 @@ const client = new MongoClient(uri, {
 });
 
 const connectDB = async () => {
-  await client.connect();
-  console.log("MongoDB Connected");
+  try {
+    
+    await client.connect();
+    console.log("✅ MongoDB Connected successfully!");
+    
+    
+    return client.db("fudexDB"); 
+  } catch (error) {
+    console.error("❌ MongoDB connection error:", error);
+    process.exit(1); 
+  }
 };
 
-module.exports = { client, connectDB };
+module.exports = connectDB;

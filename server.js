@@ -18,7 +18,7 @@ const port = process.env.PORT || 3000;
 
 
 app.use(cors({
-    origin: ['https://fudex.netlify.app', 'http://localhost:5173'], 
+    origin: ['https://fudex.netlify.app', 'http://localhost:5174'], 
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'PUT'],
     credentials: true
 }));

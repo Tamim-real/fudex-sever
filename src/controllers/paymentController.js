@@ -30,8 +30,8 @@ const paymentController = (orderCollection) => {
                         chefId: paymentInfo.chefId,
                     },
                     
-                    success_url: `${process.env.SITE_DOMAIN}/payment-success`,
-                    cancel_url: `${process.env.SITE_DOMAIN}/dashboard/payment-cancelled`,
+                    success_url: `https://fudex.netlify.app/payment-success`,
+                    cancel_url: `https://fudex.netlify.app/dashboard/payment-cancelled`,
                 });
 
               
